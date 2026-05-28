@@ -8,11 +8,22 @@ const sendBtn = document.getElementById("sendBtn");
 const form = document.getElementById("messageForm");
 const input = document.getElementById("messageInput");
 
+const genderMale = document.getElementById("genderMale");
+const genderFemale = document.getElementById("genderFemale");
+const wantAny = document.getElementById("wantAny");
+const wantMale = document.getElementById("wantMale");
+const wantFemale = document.getElementById("wantFemale");
+const autoReconnectEl = document.getElementById("autoReconnect");
+
 let polling = null;
 let lastAt = 0;
 let connected = false;
 let disconnected = false;
 let waiting = false;
+
+let autoReconnect = false;
+let myGender = "any";
+let wantGender = "any";
 
 function setStatus(text, state = "idle") {
   statusEl.textContent = text;
@@ -67,6 +78,36 @@ function updateUI() {
   }
 }
 
+function loadPrefs() {
+  try {
+    const stored = localStorage.getItem("flashchat_prefs");
+    if (stored) {
+      const p = JSON.parse(stored);
+      autoReconnect = !!p.autoReconnect;
+      myGender = p.gender || "any";
+      wantGender = p.want || "any";
+    }
+  } catch (e) {
+    console.error("Failed to load prefs", e);
+  }
+  // apply to UI
+  if (myGender === "male") genderMale.checked = true;
+  else if (myGender === "female") genderFemale.checked = true;
+  if (wantGender === "male") wantMale.checked = true;
+  else if (wantGender === "female") wantFemale.checked = true;
+  else wantAny.checked = true;
+  autoReconnectEl.checked = !!autoReconnect;
+}
+
+function savePrefs() {
+  const p = { autoReconnect, gender: myGender, want: wantGender };
+  try {
+    localStorage.setItem("flashchat_prefs", JSON.stringify(p));
+  } catch (e) {
+    console.error("Failed to save prefs", e);
+  }
+}
+
 async function joinChat() {
   if (disconnected) {
     await fetch("/leave", { method: "POST" });
@@ -79,7 +120,9 @@ async function joinChat() {
   messagesEl.innerHTML = "";
   connected = false;
 
-  const resp = await fetch("/join", { method: "POST" });
+  // send prefs with join request
+  const bodyReq = { gender: myGender, want: wantGender, autoReconnect };
+  const resp = await fetch("/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyReq) });
   const body = await resp.json();
   if (body.status === "connected") {
     connected = true;
@@ -135,6 +178,12 @@ async function poll() {
     stopPolling();
     setStatus("Partner disconnected. Try a new chat.", "disconnected");
     updateUI();
+    // auto-reconnect if enabled
+    if (autoReconnect) {
+      setTimeout(() => {
+        joinChat();
+      }, 1200);
+    }
   } else {
     if (!connected) {
       waiting = true;
@@ -211,4 +260,13 @@ form.addEventListener("submit", async (event) => {
   await sendMessage(text);
 });
 
+// prefs UI handlers
+if (genderMale) genderMale.addEventListener('change', () => { myGender = 'male'; savePrefs(); });
+if (genderFemale) genderFemale.addEventListener('change', () => { myGender = 'female'; savePrefs(); });
+if (wantAny) wantAny.addEventListener('change', () => { wantGender = 'any'; savePrefs(); });
+if (wantMale) wantMale.addEventListener('change', () => { wantGender = 'male'; savePrefs(); });
+if (wantFemale) wantFemale.addEventListener('change', () => { wantGender = 'female'; savePrefs(); });
+if (autoReconnectEl) autoReconnectEl.addEventListener('change', () => { autoReconnect = !!autoReconnectEl.checked; savePrefs(); });
+
+loadPrefs();
 updateUI();

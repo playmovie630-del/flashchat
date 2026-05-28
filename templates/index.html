@@ -10,6 +10,22 @@
   <div class="container">
     <h1>FlashChat</h1>
     <div id="status" class="status status-idle">Press Start to chat with a stranger.</div>
+    <div class="prefs">
+      <div class="pref-group">
+        <label>I am:</label>
+        <label><input type="radio" name="myGender" value="male" id="genderMale"> Male</label>
+        <label><input type="radio" name="myGender" value="female" id="genderFemale"> Female</label>
+      </div>
+      <div class="pref-group">
+        <label>I want to talk with:</label>
+        <label><input type="radio" name="wantGender" value="any" id="wantAny" checked> Any</label>
+        <label><input type="radio" name="wantGender" value="male" id="wantMale"> Male</label>
+        <label><input type="radio" name="wantGender" value="female" id="wantFemale"> Female</label>
+      </div>
+      <div class="pref-group">
+        <label><input type="checkbox" id="autoReconnect"> Auto-reconnect</label>
+      </div>
+    </div>
     <div id="chat" class="chat hidden">
       <div id="messages" class="messages"></div>
       <form id="messageForm" class="composer">

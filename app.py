@@ -128,7 +128,7 @@ def send_message():
         if len(room["messages"]) > 200:
             room["messages"].pop(0)
 
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "ok", "at": msg["at"]})
 
 
 @app.route("/leave", methods=["POST"])

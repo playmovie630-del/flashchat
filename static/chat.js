@@ -71,7 +71,9 @@ async function poll() {
       updateUI();
     }
     body.messages.forEach((message) => {
-      appendMessage(message.author, message.text);
+      if (message.author !== "me") {
+        appendMessage(message.author, message.text);
+      }
       lastAt = Math.max(lastAt, message.at);
     });
   } else {
@@ -111,8 +113,10 @@ async function sendMessage(text) {
     setStatus(body.message || "Could not send message.");
     return;
   }
+  const body = await resp.json();
   appendMessage("me", text);
   input.value = "";
+  lastAt = Math.max(lastAt, body.at || (Date.now() / 1000));
 }
 
 async function leaveChat() {

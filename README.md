@@ -1,6 +1,6 @@
-# Text-Only Random Chat
+# FlashChat
 
-A small Omegle-style text chat app built with Flask.
+A text-only random chat app built with Flask.
 
 ## What it does
 - Randomly pairs two strangers for a text conversation

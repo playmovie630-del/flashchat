@@ -42,6 +42,9 @@ def make_room(a, b):
         "b": b,
         "messages": [],
         "last_activity": time(),
+        "ended": False,
+        "ended_at": None,
+        "ended_by": None,
     }
     rooms[room_id] = room
     user_room[a] = room_id
@@ -89,6 +92,8 @@ def join():
             waiting[:] = [item for item in waiting if item["uid"] != uid]
         room_id, room = room_for_user(uid)
         if room:
+            if room.get("ended"):
+                return jsonify({"status": "disconnected"})
             return jsonify(build_response(room, uid, 0))
         if waiting:
             partner = waiting.pop(0)["uid"]
@@ -107,6 +112,8 @@ def poll():
     room_id, room = room_for_user(uid)
     if not room:
         return jsonify({"status": "waiting"})
+    if room.get("ended"):
+        return jsonify({"status": "disconnected"})
     return jsonify(build_response(room, uid, since))
 
 
@@ -141,8 +148,18 @@ def leave():
         if room_id and room_id in rooms:
             room = rooms[room_id]
             partner = room["a"] if room["b"] == uid else room["b"]
-            user_room.pop(partner, None)
-            rooms.pop(room_id, None)
+            if room.get("ended"):
+                # partner already disconnected, remove the room completely
+                rooms.pop(room_id, None)
+            else:
+                room["ended"] = True
+                room["ended_at"] = time()
+                room["ended_by"] = uid
+                if partner in user_room:
+                    # keep the partner mapped so they can receive disconnect notice
+                    pass
+                else:
+                    rooms.pop(room_id, None)
     return jsonify({"status": "ok"})
 
 

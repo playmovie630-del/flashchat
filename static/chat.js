@@ -33,7 +33,7 @@ function setStatus(text, state = "idle") {
 function formatTime(timestamp) {
   if (!timestamp) return "";
   const date = new Date(Math.floor(timestamp * 1000));
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 
 function appendMessage(author, text, at) {

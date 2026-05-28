@@ -41,6 +41,25 @@ h1 {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(148, 163, 184, 0.14);
   margin-bottom: 18px;
+  font-weight: 600;
+}
+
+.status.status-connected {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #d1fae5;
+}
+
+.status.status-waiting {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #dbeafe;
+}
+
+.status.status-disconnected {
+  background: rgba(248, 113, 113, 0.16);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fee2e2;
 }
 
 .chat {
@@ -64,6 +83,8 @@ h1 {
 
 .message {
   margin-bottom: 14px;
+  display: grid;
+  gap: 6px;
   line-height: 1.6;
 }
 
@@ -72,6 +93,102 @@ h1 {
 }
 
 .message .bubble {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 92%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.message.me .bubble {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.3);
+  align-items: flex-end;
+}
+
+.timestamp {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.composer input {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.composer input:disabled {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(148, 163, 184, 0.08);
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.composer button,
+button {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
+  color: var(--bg);
+  background: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.secondary {
+  background: #111827;
+  color: var(--text);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+button:disabled,
+.composer button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notice {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+  .container {
+    width: min(100%, 92vw);
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  .messages {
+    min-height: 300px;
+    max-height: 360px;
+  }
+
+  .composer {
+    flex-direction: column;
+  }
+
+  .composer button,
+  button {
+    width: 100%;
+  }
+}
   display: inline-block;
   max-width: 92%;
   padding: 12px 14px;

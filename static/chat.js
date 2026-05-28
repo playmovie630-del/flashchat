@@ -2,43 +2,78 @@ const statusEl = document.getElementById("status");
 const chatEl = document.getElementById("chat");
 const messagesEl = document.getElementById("messages");
 const startBtn = document.getElementById("startBtn");
+const leaveBtn = document.getElementById("leaveBtn");
 const newBtn = document.getElementById("newBtn");
+const sendBtn = document.getElementById("sendBtn");
 const form = document.getElementById("messageForm");
 const input = document.getElementById("messageInput");
 
 let polling = null;
 let lastAt = 0;
 let connected = false;
+let disconnected = false;
+let waiting = false;
 
-function setStatus(text) {
+function setStatus(text, state = "idle") {
   statusEl.textContent = text;
+  statusEl.className = `status status-${state}`;
 }
 
-function appendMessage(author, text) {
+function formatTime(timestamp) {
+  if (!timestamp) return "";
+  const date = new Date(Math.floor(timestamp * 1000));
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function appendMessage(author, text, at) {
   const wrapper = document.createElement("div");
   wrapper.className = `message ${author}`;
+
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = text;
+
+  if (at) {
+    const ts = document.createElement("span");
+    ts.className = "timestamp";
+    ts.textContent = formatTime(at);
+    bubble.appendChild(ts);
+  }
+
   wrapper.appendChild(bubble);
   messagesEl.appendChild(wrapper);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 function updateUI() {
+  sendBtn.disabled = !connected;
+  input.disabled = !connected;
+
   if (connected) {
     chatEl.classList.remove("hidden");
     newBtn.classList.remove("hidden");
+    leaveBtn.classList.remove("hidden");
+    startBtn.classList.add("hidden");
+  } else if (waiting) {
+    chatEl.classList.add("hidden");
+    newBtn.classList.add("hidden");
+    leaveBtn.classList.remove("hidden");
     startBtn.classList.add("hidden");
   } else {
     chatEl.classList.add("hidden");
     newBtn.classList.add("hidden");
+    leaveBtn.classList.add("hidden");
     startBtn.classList.remove("hidden");
   }
 }
 
 async function joinChat() {
-  setStatus("Searching for a stranger...");
+  if (disconnected) {
+    await fetch("/leave", { method: "POST" });
+    disconnected = false;
+  }
+  waiting = false;
+  setStatus("Searching for a stranger...", "waiting");
   updateUI();
   lastAt = 0;
   messagesEl.innerHTML = "";
@@ -48,15 +83,25 @@ async function joinChat() {
   const body = await resp.json();
   if (body.status === "connected") {
     connected = true;
-    setStatus("Connected — say hi!");
+    waiting = false;
+    setStatus("Connected — say hi!", "connected");
     updateUI();
     if (body.messages.length) {
-      body.messages.forEach((message) => appendMessage(message.author, message.text));
+      body.messages.forEach((message) => appendMessage(message.author, message.text, message.at));
       lastAt = body.messages[body.messages.length - 1].at;
     }
     startPolling();
+  } else if (body.status === "disconnected") {
+    connected = false;
+    disconnected = true;
+    waiting = false;
+    setStatus("Partner disconnected. Press Start to try a new chat.", "disconnected");
+    updateUI();
   } else {
-    setStatus("Waiting for a stranger...");
+    connected = false;
+    waiting = true;
+    setStatus("Waiting for a stranger...", "waiting");
+    updateUI();
     startPolling();
   }
 }
@@ -67,18 +112,28 @@ async function poll() {
   if (body.status === "connected") {
     if (!connected) {
       connected = true;
-      setStatus("Connected — say hi!");
+      waiting = false;
+      setStatus("Connected — say hi!", "connected");
       updateUI();
     }
     body.messages.forEach((message) => {
       if (message.author !== "me") {
-        appendMessage(message.author, message.text);
+        appendMessage(message.author, message.text, message.at);
       }
       lastAt = Math.max(lastAt, message.at);
     });
+  } else if (body.status === "disconnected") {
+    connected = false;
+    waiting = false;
+    disconnected = true;
+    stopPolling();
+    setStatus("Partner disconnected. Try a new chat.", "disconnected");
+    updateUI();
   } else {
     if (!connected) {
-      setStatus("Waiting for a stranger...");
+      waiting = true;
+      setStatus("Waiting for a stranger...", "waiting");
+      updateUI();
     }
   }
 }
@@ -103,6 +158,8 @@ function stopPolling() {
 }
 
 async function sendMessage(text) {
+  if (!connected) return;
+
   const resp = await fetch("/send", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -110,11 +167,11 @@ async function sendMessage(text) {
   });
   if (!resp.ok) {
     const body = await resp.json();
-    setStatus(body.message || "Could not send message.");
+    setStatus(body.message || "Could not send message.", "disconnected");
     return;
   }
   const body = await resp.json();
-  appendMessage("me", text);
+  appendMessage("me", text, body.at);
   input.value = "";
   lastAt = Math.max(lastAt, body.at || (Date.now() / 1000));
 }
@@ -122,12 +179,15 @@ async function sendMessage(text) {
 async function leaveChat() {
   await fetch("/leave", { method: "POST" });
   connected = false;
+  waiting = false;
+  disconnected = false;
   stopPolling();
-  setStatus("Press Start to chat with a stranger.");
+  setStatus("Press Start to chat with a stranger.", "idle");
   updateUI();
 }
 
 startBtn.addEventListener("click", joinChat);
+leaveBtn.addEventListener("click", leaveChat);
 newBtn.addEventListener("click", async () => {
   await leaveChat();
   joinChat();

@@ -100,7 +100,13 @@ async function joinChat() {
   } else {
     connected = false;
     waiting = true;
-    setStatus("Waiting for a stranger...", "waiting");
+    const pos = body.position || null;
+    const total = body.waiting || null;
+    if (pos && total) {
+      setStatus(`Waiting for a stranger... (${pos}/${total})`, "waiting");
+    } else {
+      setStatus("Waiting for a stranger...", "waiting");
+    }
     updateUI();
     startPolling();
   }
@@ -132,7 +138,13 @@ async function poll() {
   } else {
     if (!connected) {
       waiting = true;
-      setStatus("Waiting for a stranger...", "waiting");
+      const pos = body.position || null;
+      const total = body.waiting || null;
+      if (pos && total) {
+        setStatus(`Waiting for a stranger... (${pos}/${total})`, "waiting");
+      } else {
+        setStatus("Waiting for a stranger...", "waiting");
+      }
       updateUI();
     }
   }
@@ -190,7 +202,7 @@ startBtn.addEventListener("click", joinChat);
 leaveBtn.addEventListener("click", leaveChat);
 newBtn.addEventListener("click", async () => {
   await leaveChat();
-  joinChat();
+  await joinChat();
 });
 form.addEventListener("submit", async (event) => {
   event.preventDefault();

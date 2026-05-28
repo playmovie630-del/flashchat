@@ -88,8 +88,11 @@ def join():
     cleanup()
 
     with lock:
-        if uid in waiting:
-            waiting[:] = [item for item in waiting if item["uid"] != uid]
+        # If user is already waiting, return their position in queue
+        for idx, item in enumerate(waiting):
+            if item["uid"] == uid:
+                position = idx + 1
+                return jsonify({"status": "waiting", "position": position, "waiting": len(waiting)})
         room_id, room = room_for_user(uid)
         if room:
             if room.get("ended"):
@@ -100,7 +103,7 @@ def join():
             room_id, room = make_room(partner, uid)
             return jsonify(build_response(room, uid, 0))
         waiting.append({"uid": uid, "created_at": time()})
-        return jsonify({"status": "waiting"})
+        return jsonify({"status": "waiting", "position": len(waiting), "waiting": len(waiting)})
 
 
 @app.route("/poll", methods=["GET"])
@@ -111,7 +114,11 @@ def poll():
 
     room_id, room = room_for_user(uid)
     if not room:
-        return jsonify({"status": "waiting"})
+        # If user is in waiting queue, return their position
+        for idx, item in enumerate(waiting):
+            if item["uid"] == uid:
+                return jsonify({"status": "waiting", "position": idx + 1, "waiting": len(waiting)})
+        return jsonify({"status": "waiting", "waiting": len(waiting)})
     if room.get("ended"):
         return jsonify({"status": "disconnected"})
     return jsonify(build_response(room, uid, since))
@@ -142,7 +149,7 @@ def send_message():
 def leave():
     uid = get_user_id()
     with lock:
-        if uid in waiting:
+        if any(item["uid"] == uid for item in waiting):
             waiting[:] = [item for item in waiting if item["uid"] != uid]
         room_id = user_room.pop(uid, None)
         if room_id and room_id in rooms:
@@ -156,8 +163,18 @@ def leave():
                 room["ended_at"] = time()
                 room["ended_by"] = uid
                 if partner in user_room:
-                    # keep the partner mapped so they can receive disconnect notice
-                    pass
+                    # If there is someone waiting, immediately pair the partner
+                    if waiting:
+                        next_uid = waiting.pop(0)["uid"]
+                        # remove partner's mapping from the old room
+                        user_room.pop(partner, None)
+                        # remove the old room
+                        rooms.pop(room_id, None)
+                        # create a new room for partner and the next waiting user
+                        make_room(partner, next_uid)
+                    else:
+                        # keep the partner mapped so they can receive disconnect notice
+                        pass
                 else:
                     rooms.pop(room_id, None)
     return jsonify({"status": "ok"})

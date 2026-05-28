@@ -109,6 +109,10 @@ function savePrefs() {
 }
 
 async function joinChat() {
+  if (!myGender || myGender === "any") {
+    setStatus("Please select whether you are Male or Female before starting.", "waiting");
+    return;
+  }
   if (disconnected) {
     await fetch("/leave", { method: "POST" });
     disconnected = false;

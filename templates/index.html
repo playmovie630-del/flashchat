@@ -13,17 +13,39 @@
     <div class="prefs">
       <div class="pref-group">
         <label>I am:</label>
-        <label><input type="radio" name="myGender" value="male" id="genderMale"> Male</label>
-        <label><input type="radio" name="myGender" value="female" id="genderFemale"> Female</label>
+        <div class="pref-buttons">
+          <label>
+            <input type="radio" name="myGender" value="male" id="genderMale">
+            <span>Male</span>
+          </label>
+          <label>
+            <input type="radio" name="myGender" value="female" id="genderFemale">
+            <span>Female</span>
+          </label>
+        </div>
       </div>
       <div class="pref-group">
         <label>I want to talk with:</label>
-        <label><input type="radio" name="wantGender" value="any" id="wantAny" checked> Any</label>
-        <label><input type="radio" name="wantGender" value="male" id="wantMale"> Male</label>
-        <label><input type="radio" name="wantGender" value="female" id="wantFemale"> Female</label>
+        <div class="pref-buttons">
+          <label>
+            <input type="radio" name="wantGender" value="any" id="wantAny" checked>
+            <span>Any</span>
+          </label>
+          <label>
+            <input type="radio" name="wantGender" value="male" id="wantMale">
+            <span>Male</span>
+          </label>
+          <label>
+            <input type="radio" name="wantGender" value="female" id="wantFemale">
+            <span>Female</span>
+          </label>
+        </div>
       </div>
       <div class="pref-group">
-        <label><input type="checkbox" id="autoReconnect"> Auto-reconnect</label>
+        <label class="pref-toggle">
+          <input type="checkbox" id="autoReconnect">
+          <span>Auto-reconnect</span>
+        </label>
       </div>
     </div>
     <div id="chat" class="chat hidden">
